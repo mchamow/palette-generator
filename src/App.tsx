@@ -170,9 +170,7 @@ export default function App() {
         </span>
         <span>
           Day 2 of{' '}
-          <a href="https://github.com/mchamow?tab=repositories&q=100-days-of-react">
-            100 Days of React
-          </a>
+          <a href="https://github.com/mchamow?tab=repositories">100 Days of React</a>
         </span>
       </footer>
 
