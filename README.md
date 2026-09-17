@@ -22,7 +22,7 @@
 
 ## Tech
 
-React 19 · TypeScript · Vite · Vitest + Testing Library · deployed to GitHub Pages with GitHub Actions. No color libraries: the HSL conversions, WCAG luminance math and a small seeded random number generator are in [`src/color.ts`](src/color.ts).
+React 19 · TypeScript · Vite · Tailwind CSS v4 + [shadcn/ui](https://ui.shadcn.com) (Base UI) · lucide icons · Vitest + Testing Library · deployed to GitHub Pages with GitHub Actions. No color libraries: the HSL conversions, WCAG luminance math and a small seeded random number generator are in [`src/color.ts`](src/color.ts).
 
 ## Run locally
 
