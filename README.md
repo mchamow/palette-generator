@@ -1,10 +1,10 @@
 # 🎨 Palette Generator
 
-[![Test and deploy](https://github.com/mchamow/002-palette-generator/actions/workflows/deploy.yml/badge.svg)](https://github.com/mchamow/002-palette-generator/actions/workflows/deploy.yml)
+[![Test and deploy](https://github.com/mchamow/palette-generator/actions/workflows/deploy.yml/badge.svg)](https://github.com/mchamow/palette-generator/actions/workflows/deploy.yml)
 
 **Day 2 of [100 Days of React](https://github.com/mchamow?tab=repositories)**: generate harmonious five-color palettes and see at a glance whether text is readable on each color.
 
-**Live demo:** https://mchamow.github.io/002-palette-generator/
+**Live demo:** https://mchamow.github.io/palette-generator/
 
 ## Features
 
