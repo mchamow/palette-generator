@@ -29,6 +29,13 @@ export type PaletteAction =
   | { type: 'undo' }
 
 export const HISTORY_LIMIT = 50
+export const URL_SYNC_MS = 250
+
+/** Link to a palette on this page. Built from the code, since the address bar lags behind by URL_SYNC_MS. */
+export function paletteUrl(code: string) {
+  const { origin, pathname, search } = window.location
+  return `${origin}${pathname}${search}#${code}`
+}
 
 const hexesOf = (swatches: Swatch[]) => swatches.map((s) => s.hex)
 const unlocked = (hexes: string[]): Swatch[] => hexes.map((hex) => ({ hex, locked: false }))
@@ -110,9 +117,18 @@ export function usePalette() {
   const hexes = useMemo(() => hexesOf(state.swatches), [state.swatches])
   const code = encodePalette(hexes)
 
-  // Keep the URL shareable. replaceState doesn't fire hashchange, so this can't loop.
+  // Keep the URL shareable. Debounced because holding Space changes the palette dozens of times a
+  // second, and browsers rate-limit replaceState: Chrome drops the extra calls (leaving a stale URL),
+  // Safari and Firefox throw. replaceState doesn't fire hashchange, so this can't loop.
   useEffect(() => {
-    window.history.replaceState(window.history.state, '', `#${code}`)
+    const timer = setTimeout(() => {
+      try {
+        window.history.replaceState(window.history.state, '', `#${code}`)
+      } catch {
+        // Still rate-limited; the next palette change tries again.
+      }
+    }, URL_SYNC_MS)
+    return () => clearTimeout(timer)
   }, [code])
 
   // A palette link pasted into the address bar of an already-open tab.

@@ -1,10 +1,12 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { encodePalette, generatePalette } from './palette'
 import {
   HISTORY_LIMIT,
   initialPaletteState,
   paletteReducer,
+  paletteUrl,
+  URL_SYNC_MS,
   usePalette,
   type PaletteAction,
   type PaletteState,
@@ -135,8 +137,17 @@ describe('paletteReducer', () => {
 })
 
 describe('usePalette', () => {
-  beforeEach(() => window.history.replaceState(null, '', '/'))
-  afterEach(cleanup)
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/')
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  const syncUrl = () => act(() => vi.advanceTimersByTime(URL_SYNC_MS))
 
   it('starts from the URL hash and writes changes back to it', () => {
     window.history.replaceState(null, '', `/#${encodePalette(A)}`)
@@ -145,18 +156,50 @@ describe('usePalette', () => {
     expect(result.current.canUndo).toBe(false)
 
     act(() => result.current.load(B))
+    syncUrl()
     expect(window.location.hash).toBe(`#${encodePalette(B)}`)
     expect(result.current.code).toBe(encodePalette(B))
     expect(result.current.canUndo).toBe(true)
 
     act(() => result.current.undo())
+    syncUrl()
     expect(window.location.hash).toBe(`#${encodePalette(A)}`)
   })
 
   it('puts a generated palette in the URL when there is none', () => {
     const { result } = renderHook(() => usePalette())
     expect(result.current.hexes).toHaveLength(5)
+    syncUrl()
     expect(window.location.hash).toBe(`#${result.current.code}`)
+  })
+
+  // Holding Space generates dozens of palettes a second. Chrome silently drops replaceState calls
+  // past its rate limit (leaving a stale URL); Safari and Firefox throw a SecurityError.
+  it('writes the URL once after a burst of changes', () => {
+    const { result } = renderHook(() => usePalette())
+    syncUrl()
+    const replaceState = vi.spyOn(window.history, 'replaceState')
+    for (let i = 0; i < 300; i++) act(() => result.current.generate())
+    expect(replaceState).not.toHaveBeenCalled()
+
+    syncUrl()
+    expect(replaceState).toHaveBeenCalledTimes(1)
+    expect(window.location.hash).toBe(`#${result.current.code}`)
+  })
+
+  it('keeps working when the browser rejects URL updates', () => {
+    vi.spyOn(window.history, 'replaceState').mockImplementation(() => {
+      throw new DOMException('Attempt to use history.replaceState() too often', 'SecurityError')
+    })
+    const { result } = renderHook(() => usePalette())
+    act(() => result.current.generate())
+    expect(() => syncUrl()).not.toThrow()
+    expect(result.current.hexes).toHaveLength(5)
+  })
+
+  it('builds a share link for any palette, independent of the current URL', () => {
+    window.history.replaceState(null, '', '/palette-generator/?ref=x#stale')
+    expect(paletteUrl('abc')).toBe(`${window.location.origin}/palette-generator/?ref=x#abc`)
   })
 
   it('loads a palette link opened in the same tab', () => {

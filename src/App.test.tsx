@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { encodePalette, paletteToCss } from './palette'
 import { STORAGE_KEY } from './savedPalettes'
+import { URL_SYNC_MS } from './usePalette'
 import { TOAST_MS } from './useToast'
 
 const A = ['#e5484d', '#12a594', '#3e63dd', '#1c1c1a', '#f7f7f5']
@@ -49,6 +50,7 @@ describe('App', () => {
   })
 
   it('generates a new palette with Space, keeping locked colors', () => {
+    vi.useFakeTimers()
     render(<App />)
     press('2')
     expect(lockButton(2).getAttribute('aria-pressed')).toBe('true')
@@ -57,6 +59,7 @@ describe('App', () => {
     const next = hexes()
     expect(next).not.toEqual(A)
     expect(next[1]).toBe(A[1])
+    act(() => vi.advanceTimersByTime(URL_SYNC_MS))
     expect(window.location.hash).toBe(`#${encodePalette(next)}`)
   })
 
@@ -152,9 +155,18 @@ describe('App', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Link' }))
     })
-    expect(writeText).toHaveBeenLastCalledWith(window.location.href)
-    expect(window.location.href).toMatch(new RegExp(`#${encodePalette(A)}$`))
+    expect(writeText).toHaveBeenLastCalledWith(`${window.location.origin}/#${encodePalette(A)}`)
     expect(toast().textContent).toBe('Link copied')
+  })
+
+  it('copies a link to the palette on screen, even before the URL catches up', async () => {
+    render(<App />)
+    press(' ')
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Link' }))
+    })
+    expect(writeText).toHaveBeenLastCalledWith(`${window.location.origin}/#${encodePalette(hexes())}`)
+    expect(hexes()).not.toEqual(A)
   })
 
   it('tells you when copying fails', async () => {

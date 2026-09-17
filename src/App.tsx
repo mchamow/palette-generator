@@ -4,7 +4,7 @@ import { MODES, PALETTE_SIZE, paletteToCss, type Mode } from './palette'
 import { SavedList } from './SavedList'
 import { isSaved, useSavedPalettes } from './savedPalettes'
 import { SwatchCard } from './SwatchCard'
-import { usePalette } from './usePalette'
+import { paletteUrl, usePalette } from './usePalette'
 import { copyText, useToast } from './useToast'
 
 const MODE_LABELS: Record<Mode, string> = {
@@ -123,7 +123,7 @@ export default function App() {
           <button
             type="button"
             className="btn"
-            onClick={() => copy(window.location.href, 'Link copied')}
+            onClick={() => copy(paletteUrl(palette.code), 'Link copied')}
             title="Copy a link to this palette"
           >
             <LinkIcon /> <span className="btn-label">Link</span>
